@@ -47,21 +47,26 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.get('/urls/:id', (req, res) => {
-  const templateVars = { id: req.params.id, longURL: "http://www.lighthouselabs.ca" };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
 });
 
+//open the url when passed the ID
+app.get("/u/:id", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    res.status(404).send(`${req.params.id} is not created yet. `);
+    return;
+  }
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
+});
 
 //POSTS
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  const URLCode = generateRandomString();
+  urlDatabase[URLCode] = req.body.longURL;
+  res.redirect(`/urls/${URLCode}`);
 });
-
-
-
-
-
 
 app.listen(PORT, () => {
   console.log(`Example app Listening to port: ${PORT}`);
