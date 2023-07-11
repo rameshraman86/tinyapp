@@ -93,7 +93,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  // res.clearCookie(req.body.username);
+  res.clearCookie("username");
   res.redirect("/urls");
 });
 
