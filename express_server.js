@@ -24,7 +24,7 @@ const urlDatabase = {
 
 //GET METHODS
 app.get('/', (req, res) => {
-  res.send('Hello');
+  res.redirect('/urls');
 });
 
 app.get('/urls.json', (req, res) => {
@@ -60,7 +60,7 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
-//add a new tiny url
+//Create a new tiny url
 app.post("/urls", (req, res) => {
   const URLCode = generateRandomString();
   urlDatabase[URLCode] = req.body.longURL;
@@ -73,11 +73,12 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-// //UPDATE a long url name
-// app.post("/urls/:id", (req, res) => {
-//   urlDatabase[req.params.id] = req.body.longURLNew;
-//   res.redirect("/urls");
-// });
+
+//UPDATE a long url name
+app.post("/urls/:id/update", (req, res) => {
+  urlDatabase[req.params.id] = req.body.longURLUpdated;
+  res.redirect("/urls");
+});
 
 
 app.listen(PORT, () => {
