@@ -8,7 +8,7 @@ app.set('view engine', 'ejs');
 function generateRandomString() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
-
+  
   for (let i = 0; i < 6; i++) {
     const randomIndex = Math.floor(Math.random() * characters.length);
     randomString += characters.charAt(randomIndex);
@@ -25,14 +25,6 @@ const urlDatabase = {
 //GET METHODS
 app.get('/', (req, res) => {
   res.redirect('/urls');
-});
-
-app.get('/urls.json', (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 //send the urldatabase to url_index.ejs file and then render it in the browser in /urls endpoint.
@@ -60,7 +52,7 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
-//Create a new tiny url
+//add a new tiny url
 app.post("/urls", (req, res) => {
   const URLCode = generateRandomString();
   urlDatabase[URLCode] = req.body.longURL;
@@ -84,3 +76,13 @@ app.post("/urls/:id/update", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app Listening to port: ${PORT}`);
 });
+
+
+
+// app.get('/urls.json', (req, res) => {
+//   res.json(urlDatabase);
+// });
+
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n");
+// });
