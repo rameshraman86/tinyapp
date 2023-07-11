@@ -16,7 +16,6 @@ function generateRandomString() {
   return randomString;
 }
 
-
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
@@ -36,7 +35,7 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-//send the urldatabase to url_index file and then render it in the browser in /urls endpoint.
+//send the urldatabase to url_index.ejs file and then render it in the browser in /urls endpoint.
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
@@ -66,6 +65,12 @@ app.post("/urls", (req, res) => {
   const URLCode = generateRandomString();
   urlDatabase[URLCode] = req.body.longURL;
   res.redirect(`/urls/${URLCode}`);
+});
+
+//DELETE A TINYURL
+app.post("/urls/:id/delete", (req, res) => {
+  delete urlDatabase[req.params.id];
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
