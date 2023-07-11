@@ -8,7 +8,7 @@ app.set('view engine', 'ejs');
 function generateRandomString() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
-  
+
   for (let i = 0; i < 6; i++) {
     const randomIndex = Math.floor(Math.random() * characters.length);
     randomString += characters.charAt(randomIndex);
@@ -69,6 +69,13 @@ app.post("/urls/:id/delete", (req, res) => {
 //UPDATE a long url name
 app.post("/urls/:id/update", (req, res) => {
   urlDatabase[req.params.id] = req.body.longURLUpdated;
+  res.redirect("/urls");
+});
+
+
+//Login POST: should set a cookie named username to the value submitted in the request body via the login form. After our server has set the cookie it should redirect the browser back to the /urls page.
+app.post("/login", (req, res) => {
+  res.cookie("username", req.body.username);
   res.redirect("/urls");
 });
 
