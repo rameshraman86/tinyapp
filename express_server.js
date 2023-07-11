@@ -60,7 +60,7 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
-//POSTS
+//add a new tiny url
 app.post("/urls", (req, res) => {
   const URLCode = generateRandomString();
   urlDatabase[URLCode] = req.body.longURL;
@@ -72,6 +72,13 @@ app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
+
+// //UPDATE a long url name
+// app.post("/urls/:id", (req, res) => {
+//   urlDatabase[req.params.id] = req.body.longURLNew;
+//   res.redirect("/urls");
+// });
+
 
 app.listen(PORT, () => {
   console.log(`Example app Listening to port: ${PORT}`);
