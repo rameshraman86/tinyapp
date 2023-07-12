@@ -1,24 +1,14 @@
 const cookieParser = require('cookie-parser');
 const express = require('express');
+const { findUserByEmail, generateRandomString } = require("./helperFunctions");
 const app = express();
-const PORT = 8080;
 app.use(express.urlencoded({ extended: true }));
+
 app.use(cookieParser());
-
-const { findUserByEmail } = require("./helperFunctions");
-
 app.set('view engine', 'ejs');
 
-function generateRandomString() {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let randomString = '';
+const PORT = 8080;
 
-  for (let i = 0; i < 6; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    randomString += characters.charAt(randomIndex);
-  }
-  return randomString;
-}
 
 //URL Database
 const urlDatabase = {
@@ -54,10 +44,10 @@ app.post("/register", (req, res) => {
   }
 
   if (findUserByEmail(req.body.email, users) === null) { //user does not exist already, create user profile
-    const generatedRandomUserID = generateRandomString();
+    const generatedRandomUserID = generateRandomString(6);
     users[generatedRandomUserID] = {
       id: generatedRandomUserID,
-      email: req.body.email,
+      email: req.body.email.toLowerCase(),
       password: req.body.password
     };
     res.cookie("user_id", generatedRandomUserID);
@@ -75,17 +65,39 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
+  if (req.body.email === '' || req.body.password === '') {
+    return res.status(400).send('Email or Password cannot be empty');
+  }
+
+  const user = findUserByEmail(req.body.email.toLowerCase(), users);
+
+  if (user !== null && req.body.password === user.password) {
+    res.cookie("user_id", user.id);
+    return res.redirect("/urls");
+  }
+
+  if (user !== null && req.body.password !== user.password) {
+    return res.status(403).send("Incorrect password.");
+  }
+
+  if (user === null) {
+    return res.status(403).send('You have not registered yet. Please register before logging in');
+  }
+
 
 });
 
 /*
 HOMEPAGE - SEE ALL URLS
 */
-// app.get('/', (req, res) => {
-//   res.redirect('/urls');
-// });
+app.get('/', (req, res) => {
+  res.redirect('/urls');
+});
 
 app.get('/urls', (req, res) => {
+  if (req.cookies["user_id"] === undefined) {
+    return res.redirect("/login");
+  }
   const templateVars = {
     userID: req.cookies["user_id"],
     user: users,
@@ -94,8 +106,6 @@ app.get('/urls', (req, res) => {
   };
   res.render("urls_index", templateVars);
 });
-
-
 
 /*
 ADD NEW URL
@@ -110,7 +120,7 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const URLCode = generateRandomString();
+  const URLCode = generateRandomString(6);
   urlDatabase[URLCode] = req.body.longURL;
   res.redirect(`/urls/${URLCode}`);
 });
@@ -146,7 +156,7 @@ OPEN THE URL
 app.get("/u/:id", (req, res) => {
   const templateVars = {
     currentPage: 'URLPage'
-  }
+  };
   if (!urlDatabase[req.params.id]) {
     res.status(404).send(`${req.params.id} is not created yet. `);
     return;
@@ -165,12 +175,14 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 
+
+
 /*
 LOGOUT AND CLEAR COOKIES
 */
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/register");
+  res.redirect("/login");
 });
 
 
