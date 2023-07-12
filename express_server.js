@@ -28,6 +28,11 @@ const users = {
     email: "user2@example.com",
     password: "dishwasher-funk",
   },
+  user3RandomID: {
+    id: "user3RandomID",
+    email: "r@r.com",
+    password: "test",
+  },
 };
 
 
@@ -35,6 +40,10 @@ const users = {
 REGISTRATION
 */
 app.get("/register", (req, res) => {
+  if (req.cookies["user_id"]) {
+    return res.redirect('/urls');
+  }
+  
   res.render("register", { currentPage: 'register' });
 });
 
@@ -61,6 +70,10 @@ app.post("/register", (req, res) => {
 USER LOGIN
 */
 app.get("/login", (req, res) => {
+  if (req.cookies["user_id"]) {
+    return res.redirect("/urls");
+  }
+
   return res.render("login", { currentPage: 'login' });
 });
 
