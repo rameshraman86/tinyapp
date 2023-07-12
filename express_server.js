@@ -19,11 +19,27 @@ function generateRandomString() {
   return randomString;
 }
 
+//URL Database
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
   "4facas": "http://www.reddit.com"
 };
+
+//Users Database
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+
 
 //homepage. Redirects to the /urls to show all urls of logged in user.
 app.get('/', (req, res) => {
@@ -94,6 +110,18 @@ app.post("/urls/:id/update", (req, res) => {
   res.redirect("/urls");
 });
 
+app.post("/register", (req, res) => {
+  const generatedRandomUserID = generateRandomString();
+
+  users[generatedRandomUserID] = {
+    id: generatedRandomUserID,
+    email: req.body.email,
+    password: req.body.password
+  };
+  
+  res.cookie("username", generatedRandomUserID);
+  res.redirect("/urls");
+});
 
 //Login POST: should set a cookie named username to the value submitted in the request body via the login form. After our server has set the cookie it should redirect the browser back to the /urls page.
 app.post("/login", (req, res) => {
