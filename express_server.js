@@ -49,7 +49,8 @@ app.get('/', (req, res) => {
 //send the urldatabase to url_index.ejs file and then render it in the browser in /urls endpoint.
 app.get('/urls', (req, res) => {
   const templateVars = {
-    username: req.cookies["username"],
+    userID: req.cookies["user_id"],
+    user: users,
     urls: urlDatabase
   };
   res.render("urls_index", templateVars);
@@ -58,7 +59,8 @@ app.get('/urls', (req, res) => {
 //page to add new URL
 app.get('/urls/new', (req, res) => {
   const templateVars = {
-    username: req.cookies["username"]
+    userID: req.cookies["user_id"],
+    user: users
   };
   res.render("urls_new", templateVars);
 });
@@ -66,7 +68,8 @@ app.get('/urls/new', (req, res) => {
 //page that opens the details page of a tinyURL.
 app.get('/urls/:id', (req, res) => {
   const templateVars = {
-    username: req.cookies["username"],
+    userID: req.cookies["user_id"],
+    user: users,
     id: req.params.id,
     longURL: urlDatabase[req.params.id]
   };
@@ -110,29 +113,29 @@ app.post("/urls/:id/update", (req, res) => {
   res.redirect("/urls");
 });
 
+//REGISTRATION
 app.post("/register", (req, res) => {
   const generatedRandomUserID = generateRandomString();
-
   users[generatedRandomUserID] = {
     id: generatedRandomUserID,
     email: req.body.email,
     password: req.body.password
   };
   
-  res.cookie("username", generatedRandomUserID);
+  res.cookie("user_id", generatedRandomUserID);
   res.redirect("/urls");
 });
 
 //Login POST: should set a cookie named username to the value submitted in the request body via the login form. After our server has set the cookie it should redirect the browser back to the /urls page.
-app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect("/urls");
-});
+// app.post("/login", (req, res) => {
+//   res.cookie("user_id", req.body.email);
+//   res.redirect("/urls");
+// });
 
 //Logout and clear cookies
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
-  res.redirect("/urls");
+  res.clearCookie("user_id");
+  res.redirect("/register");
 });
 
 
