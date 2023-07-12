@@ -64,10 +64,15 @@ app.get("/u/:id", (req, res) => {
     return;
   }
   const longURL = urlDatabase[req.params.id];
-  console.log(typeof(longURL));
+  console.log(typeof (longURL));
   res.redirect(longURL);
 });
 
+
+//registration page get
+app.get("/register", (req, res) => {
+  res.render("register");
+});
 
 //Add a new tinyURL
 app.post("/urls", (req, res) => {
