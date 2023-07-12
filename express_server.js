@@ -45,7 +45,7 @@ const users = {
 REGISTRATION
 */
 app.get("/register", (req, res) => {
-  res.render("register");
+  res.render("register", { currentPage: 'register' });
 });
 
 app.post("/register", (req, res) => {
@@ -68,6 +68,17 @@ app.post("/register", (req, res) => {
 });
 
 /*
+USER LOGIN
+*/
+app.get("/login", (req, res) => {
+  return res.render("login", { currentPage: 'login' });
+});
+
+app.post("/login", (req, res) => {
+
+});
+
+/*
 HOMEPAGE - SEE ALL URLS
 */
 // app.get('/', (req, res) => {
@@ -78,7 +89,8 @@ app.get('/urls', (req, res) => {
   const templateVars = {
     userID: req.cookies["user_id"],
     user: users,
-    urls: urlDatabase
+    urls: urlDatabase,
+    currentPage: 'URLIndex'
   };
   res.render("urls_index", templateVars);
 });
@@ -91,7 +103,8 @@ ADD NEW URL
 app.get('/urls/new', (req, res) => {
   const templateVars = {
     userID: req.cookies["user_id"],
-    user: users
+    user: users,
+    currentPage: 'AddNewURL'
   };
   res.render("urls_new", templateVars);
 });
@@ -113,7 +126,8 @@ app.get('/urls/:id', (req, res) => {
     userID: req.cookies["user_id"],
     user: users,
     id: req.params.id,
-    longURL: urlDatabase[req.params.id]
+    longURL: urlDatabase[req.params.id],
+    currentPage: 'URLDetails'
   };
   res.render("urls_show", templateVars);
 });
@@ -130,12 +144,14 @@ app.post("/urls/:id/update", (req, res) => {
 OPEN THE URL
 */
 app.get("/u/:id", (req, res) => {
+  const templateVars = {
+    currentPage: 'URLPage'
+  }
   if (!urlDatabase[req.params.id]) {
     res.status(404).send(`${req.params.id} is not created yet. `);
     return;
   }
   const longURL = urlDatabase[req.params.id];
-  console.log(typeof (longURL));
   res.redirect(longURL);
 });
 
@@ -148,13 +164,6 @@ app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
-
-
-//Login POST: should set a cookie named username to the value submitted in the request body via the login form. After our server has set the cookie it should redirect the browser back to the /urls page.
-// app.post("/login", (req, res) => {
-//   res.cookie("user_id", req.body.email);
-//   res.redirect("/urls");
-// });
 
 /*
 LOGOUT AND CLEAR COOKIES
