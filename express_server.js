@@ -5,6 +5,7 @@ const PORT = 8080;
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+const { findUserByEmail } = require("./helperFunctions");
 
 app.set('view engine', 'ejs');
 
@@ -25,7 +26,6 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
   "4facas": "http://www.reddit.com"
 };
-
 //Users Database
 const users = {
   userRandomID: {
@@ -41,12 +41,39 @@ const users = {
 };
 
 
-//homepage. Redirects to the /urls to show all urls of logged in user.
-app.get('/', (req, res) => {
-  res.redirect('/urls');
+/*
+REGISTRATION
+*/
+app.get("/register", (req, res) => {
+  res.render("register");
 });
 
-//send the urldatabase to url_index.ejs file and then render it in the browser in /urls endpoint.
+app.post("/register", (req, res) => {
+  if (req.body.email === '' || req.body.password === '') {
+    return res.status(400).send('Email or Password cannot be empty');
+  }
+
+  if (findUserByEmail(req.body.email, users) === null) { //user does not exist already, create user profile
+    const generatedRandomUserID = generateRandomString();
+    users[generatedRandomUserID] = {
+      id: generatedRandomUserID,
+      email: req.body.email,
+      password: req.body.password
+    };
+    res.cookie("user_id", generatedRandomUserID);
+    return res.redirect("/urls");
+  } else { //if user already exists, return 400
+    return res.status(400).send('User already exists.');
+  }
+});
+
+/*
+HOMEPAGE - SEE ALL URLS
+*/
+// app.get('/', (req, res) => {
+//   res.redirect('/urls');
+// });
+
 app.get('/urls', (req, res) => {
   const templateVars = {
     userID: req.cookies["user_id"],
@@ -56,7 +83,11 @@ app.get('/urls', (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-//page to add new URL
+
+
+/*
+ADD NEW URL
+*/
 app.get('/urls/new', (req, res) => {
   const templateVars = {
     userID: req.cookies["user_id"],
@@ -65,6 +96,17 @@ app.get('/urls/new', (req, res) => {
   res.render("urls_new", templateVars);
 });
 
+app.post("/urls", (req, res) => {
+  const URLCode = generateRandomString();
+  urlDatabase[URLCode] = req.body.longURL;
+  res.redirect(`/urls/${URLCode}`);
+});
+
+
+
+/*
+VIEW DETAILS AND EDIT URL
+*/
 //page that opens the details page of a tinyURL.
 app.get('/urls/:id', (req, res) => {
   const templateVars = {
@@ -76,7 +118,17 @@ app.get('/urls/:id', (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-//Will get the actual url when passed the tinyURL ID.
+
+app.post("/urls/:id/update", (req, res) => {
+  urlDatabase[req.params.id] = req.body.longURLUpdated;
+  res.redirect("/urls");
+});
+
+
+
+/*
+OPEN THE URL
+*/
 app.get("/u/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
     res.status(404).send(`${req.params.id} is not created yet. `);
@@ -88,43 +140,15 @@ app.get("/u/:id", (req, res) => {
 });
 
 
-//registration page get
-app.get("/register", (req, res) => {
-  res.render("register");
-});
 
-//Add a new tinyURL
-app.post("/urls", (req, res) => {
-  const URLCode = generateRandomString();
-  urlDatabase[URLCode] = req.body.longURL;
-  res.redirect(`/urls/${URLCode}`);
-});
-
-//Delete a TinyURL
+/*
+DELETE A TINY URL
+*/
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
 
-
-//Update a tinyURL
-app.post("/urls/:id/update", (req, res) => {
-  urlDatabase[req.params.id] = req.body.longURLUpdated;
-  res.redirect("/urls");
-});
-
-//REGISTRATION
-app.post("/register", (req, res) => {
-  const generatedRandomUserID = generateRandomString();
-  users[generatedRandomUserID] = {
-    id: generatedRandomUserID,
-    email: req.body.email,
-    password: req.body.password
-  };
-  
-  res.cookie("user_id", generatedRandomUserID);
-  res.redirect("/urls");
-});
 
 //Login POST: should set a cookie named username to the value submitted in the request body via the login form. After our server has set the cookie it should redirect the browser back to the /urls page.
 // app.post("/login", (req, res) => {
@@ -132,7 +156,9 @@ app.post("/register", (req, res) => {
 //   res.redirect("/urls");
 // });
 
-//Logout and clear cookies
+/*
+LOGOUT AND CLEAR COOKIES
+*/
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/register");
