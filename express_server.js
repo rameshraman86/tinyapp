@@ -43,7 +43,7 @@ app.get("/register", (req, res) => {
   if (req.cookies["user_id"]) {
     return res.redirect('/urls');
   }
-  
+
   res.render("register", { currentPage: 'register' });
 });
 
@@ -124,6 +124,10 @@ app.get('/urls', (req, res) => {
 ADD NEW URL
 */
 app.get('/urls/new', (req, res) => {
+  if (req.cookies["user_id"] === undefined) {
+    return res.redirect("/login");
+  }
+
   const templateVars = {
     userID: req.cookies["user_id"],
     user: users,
@@ -133,9 +137,14 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const URLCode = generateRandomString(6);
-  urlDatabase[URLCode] = req.body.longURL;
-  res.redirect(`/urls/${URLCode}`);
+  if (req.cookies["user_id"] === undefined) {
+    return res.send('<html><body><h1>Lost your way?</h1><h3>You must be signed in to create tiny URL. Please register if you have not already and sign in to continue.</h3></body></html>');
+  }
+  else {
+    const URLCode = generateRandomString(6);
+    urlDatabase[URLCode] = req.body.longURL;
+    res.redirect(`/urls/${URLCode}`);
+  }
 });
 
 
@@ -171,7 +180,8 @@ app.get("/u/:id", (req, res) => {
     currentPage: 'URLPage'
   };
   if (!urlDatabase[req.params.id]) {
-    res.status(404).send(`${req.params.id} is not created yet. `);
+    // res.status(404).send(`${req.params.id} is not created yet. `);
+    res.status(404).send(`<html><body><h1>ID does not exist.</h1><h3>The ID you entered <i>\"${req.params.id}\" </i>does not exist.</h3></body></html>`);
     return;
   }
   const longURL = urlDatabase[req.params.id];
