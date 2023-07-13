@@ -1,13 +1,18 @@
 const cookieParser = require('cookie-parser');
 const express = require('express');
+const bcrypt = require("bcryptjs");
+const salt = bcrypt.genSaltSync(10);
+
 const { findUserByEmail, generateRandomString, urlsForUser } = require("./helperFunctions");
 const app = express();
-app.use(express.urlencoded({ extended: true }));
 
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
 app.set('view engine', 'ejs');
 
 const PORT = 8080;
+
 
 const urlDatabase = {
   "b2xVn2": {
@@ -37,17 +42,17 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "user@example.com"
+    password: "$2a$10$.f2m2OwlcFBe1lxI.lMOMO5Wem9crv74pZoc.TuNIWNPHI80Ce6yu"
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "user2@example.com",
+    password: "$2a$10$oOMCCuMlb/ZcbMBiIC0CbuAW8ByZCt0RKEgrmJcxqgR.JEomWjw/2",
   },
   user3RandomID: {
     id: "user3RandomID",
     email: "r@r.com",
-    password: "r@r.com",
+    password: "$2a$10$iYluqKNueyZZAMeWBxK2fe0y3.hyM3kNwybVKjgEHUAdHJLTadeem",
   },
 };
 
@@ -67,7 +72,7 @@ app.get('/register', (req, res) => {
 
 app.post('/register', (req, res) => {
   const email = req.body.email;
-  const password = req.body.password;
+  const password = bcrypt.hashSync(req.body.password, salt);
 
   if (email === '' || password === '') {
     return res.status(400).send('Email or Password cannot be empty');
@@ -103,28 +108,31 @@ app.get('/login', (req, res) => {
 
 app.post('/login', (req, res) => {
   const email = req.body.email;
-  const password = req.body.password;
+  const userEnteredPassword = req.body.password;
 
-  if (email === '' || password === '') {
+  if (email === '' || userEnteredPassword === '') {
     return res.status(400).send('Email or Password cannot be empty');
   }
 
-  const user = findUserByEmail(email.toLowerCase(), users);
+  //use the email to find user record from users database
+  const userRecordInDatabase = findUserByEmail(email.toLowerCase(), users);
 
-  if (user !== null && password === user.password) {
-    res.cookie("user_id", user.id);
+  //user name and password match. All good.
+  if (userRecordInDatabase !== null && bcrypt.compareSync(userEnteredPassword, userRecordInDatabase.password)) {
+    res.cookie("user_id", userRecordInDatabase.id);
     return res.redirect("/urls");
   }
 
-  if (user !== null && password !== user.password) {
+  //username exists but password does not match
+  if (userRecordInDatabase !== null && !bcrypt.compareSync(userEnteredPassword, userRecordInDatabase.password)) {
     return res.status(403).send("Login Failed. Incorrect Username or Password.");
   }
 
-  if (user === null) {
+  //user does not exist
+  if (userRecordInDatabase === null) {
     return res.status(403).send('Login Failed. Incorrect Username or Password.');
   }
 });
-
 
 
 /*
