@@ -30,7 +30,7 @@ const urlDatabase = {
     longURL: "https://www.reddit.com",
     userID: "aJ48lW",
   },
-  
+
 };
 
 //Users Database
@@ -126,7 +126,8 @@ app.get('/', (req, res) => {
 
 app.get('/urls', (req, res) => {
   if (req.cookies["user_id"] === undefined) {
-    return res.redirect("/login");
+    // return res.redirect("/login");
+    return res.send('<html><h1>Lost your way?</h1><h3>You must be signed in to view your URLs. Please register if you have not already and sign in to continue.</h3><a href ="/login">Back to login page</a></body></html>');
   }
   const templateVars = {
     userID: req.cookies["user_id"],
