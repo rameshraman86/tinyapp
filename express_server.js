@@ -9,7 +9,6 @@ app.set('view engine', 'ejs');
 
 const PORT = 8080;
 
-
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
@@ -58,30 +57,34 @@ const users = {
 REGISTRATION
 */
 app.get('/register', (req, res) => {
-  if (req.cookies["user_id"]) {
+  const userID = req.cookies["user_id"];
+
+  if (userID) {
     return res.redirect('/urls');
   }
-
   res.render("register", { currentPage: 'register' });
 });
 
 app.post('/register', (req, res) => {
-  if (req.body.email === '' || req.body.password === '') {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (email === '' || password === '') {
     return res.status(400).send('Email or Password cannot be empty');
   }
 
-  if (findUserByEmail(req.body.email, users) === null) { //user does not exist already, create user profile
+  if (findUserByEmail(email, users) === null) { //user does not exist already, create user profile
     const generatedRandomUserID = generateRandomString(6);
     users[generatedRandomUserID] = {
       id: generatedRandomUserID,
-      email: req.body.email.toLowerCase(),
-      password: req.body.password
+      email: email.toLowerCase(),
+      password: password
     };
     res.cookie("user_id", generatedRandomUserID);
     return res.redirect("/urls");
-  } else { //if user already exists, return 400
-    return res.status(400).send('User already exists.');
   }
+
+  return res.status(400).send('User already exists.');
 });
 
 
@@ -90,30 +93,35 @@ app.post('/register', (req, res) => {
 USER LOGIN
 */
 app.get('/login', (req, res) => {
-  if (req.cookies["user_id"]) {
+  const userID = req.cookies["user_id"];
+
+  if (userID) {
     return res.redirect("/urls");
   }
   return res.render("login", { currentPage: 'login' });
 });
 
 app.post('/login', (req, res) => {
-  if (req.body.email === '' || req.body.password === '') {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (email === '' || password === '') {
     return res.status(400).send('Email or Password cannot be empty');
   }
 
-  const user = findUserByEmail(req.body.email.toLowerCase(), users);
+  const user = findUserByEmail(email.toLowerCase(), users);
 
-  if (user !== null && req.body.password === user.password) {
+  if (user !== null && password === user.password) {
     res.cookie("user_id", user.id);
     return res.redirect("/urls");
   }
 
-  if (user !== null && req.body.password !== user.password) {
-    return res.status(403).send("Incorrect password.");
+  if (user !== null && password !== user.password) {
+    return res.status(403).send("Login Failed. Incorrect Username or Password.");
   }
 
   if (user === null) {
-    return res.status(403).send('You have not registered yet. Please register before logging in');
+    return res.status(403).send('Login Failed. Incorrect Username or Password.');
   }
 });
 
@@ -127,16 +135,19 @@ app.get('/', (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  if (req.cookies["user_id"] === undefined) {
+  const userID = req.cookies["user_id"];
+
+  if (userID === undefined) {
     return res.send('<html><h1>Lost your way?</h1><h3>You must be signed in to view your URLs. Please register if you have not already and sign in to continue.</h3><a href ="/login">Back to login page</a></body></html>');
   }
 
   const templateVars = {
-    userID: req.cookies["user_id"],
+    userID: userID,
     user: users,
-    urls: urlsForUser(req.cookies["user_id"], urlDatabase),
+    urls: urlsForUser(userID, urlDatabase),
     currentPage: 'URLIndex'
   };
+
   res.render("urls_index", templateVars);
 });
 
@@ -146,12 +157,14 @@ app.get('/urls', (req, res) => {
 ADD NEW URL
 */
 app.get('/urls/new', (req, res) => {
-  if (req.cookies["user_id"] === undefined) {
+  const userID = req.cookies["user_id"];
+
+  if (userID === undefined) {
     return res.redirect("/login");
   }
 
   const templateVars = {
-    userID: req.cookies["user_id"],
+    userID: userID,
     user: users,
     currentPage: 'AddNewURL'
   };
@@ -159,13 +172,14 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.post('/urls', (req, res) => {
-  if (req.cookies["user_id"] === undefined) {
+  const userID = req.cookies["user_id"];
+
+  if (userID === undefined) {
     return res.send('<html><body><h1>Lost your way?</h1><h3>You must be signed in to create tiny URL. Please register if you have not already and sign in to continue.</h3></body></html>');
   }
   else {
     const tinyURLID = generateRandomString(6);
     const incominglongURL = req.body.longURL;
-    const userID = req.cookies["user_id"];
     urlDatabase[tinyURLID] = { longURL: incominglongURL, userID };
 
     res.redirect(`/urls/${tinyURLID}`);
@@ -179,47 +193,64 @@ VIEW DETAILS AND EDIT URL
 */
 //page that opens the details page of a tinyURL.
 app.get('/urls/:id', (req, res) => {
-  if (!req.cookies["user_id"]) {
+  const userID = req.cookies["user_id"];
+  const urlID = req.params.id;
+
+  if (!userID) {
     return res.send('<html><h1>Lost your way?</h1><h3>You must be signed in to view URL details. <a href ="/login">Back to login page</a></body></html>');
   }
 
-  //input : tinyurlID //must check if urlDatabase[tinuURLID].userID === loggedin user.
-  if (urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
-    return res.send('<html><h1>Invalid Request</h1><h3>You do not have access to the TinyURL details.</h3></body></html>');
+  //TinyURL does not exist. 
+  if (!urlDatabase[urlID]) {
+    return res.status(400).send(`<html><h3>The TinyURL you entered does not exist.</h3><a href ="/login">Back to login page</a></body></html>'`);
   }
 
+  //Check if the tinyURL belongs to the logged in user. if not, error
+  if (urlDatabase[urlID].userID !== userID) {
+    return res.send('<html><h1>Invalid Request</h1><h3>You do not have access to the TinyURL details.</h3></body></html>');
+  }
+  //tinyURL belongs to logged in user. So, go ahead and render the page with these variables.
   const templateVars = {
-    userID: req.cookies["user_id"],
+    userID: userID,
     user: users,
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id].longURL,
+    id: urlID,
+    longURL: urlDatabase[urlID].longURL,
     currentPage: 'URLDetails'
   };
   res.render("urls_show", templateVars);
 });
 
 app.post('/urls/:id', (req, res) => {
-  if(!urlDatabase[req.params.id]) {
-    return req.status(400).send(`${req.params.id} does not exist.`);
+  const userID = req.cookies["user_id"];
+  const urlID = req.params.id;
+
+  //nobody is logged in. Error out.
+  if (!userID) {
+    return res.send('Error. You must be signed in to view or edit URL details.');
   }
-});
-
-app.post('/urls/:id/update', (req, res) => {
-  urlDatabase[req.params.id].longURL = req.body.longURLUpdated;
+  //TinyURL does not exist in the database
+  if (!urlDatabase[urlID]) {
+    return res.status(400).send(`The requested TinyURL does not exist.`);
+  }
+  //logged in user doesn't have access to the tinyURL that they are trying to open
+  if (urlDatabase[urlID].userID !== userID) {
+    return res.send('Invalid Request. You do not have access to the TinyURL details.');
+  }
+  //tinyURL exists, user is logged in and they own this URL. update the URL when update is pressed.
+  urlDatabase[urlID].longURL = req.body.longURLUpdated;
   res.redirect("/urls");
-});
 
+});
 
 
 /*
-OPEN THE URL
+OPEN THE full URL using tinyURL
 */
 app.get('/u/:id', (req, res) => {
   const templateVars = {
     currentPage: 'URLPage'
   };
   if (!urlDatabase[req.params.id]) {
-    // res.status(404).send(`${req.params.id} is not created yet. `);
     res.status(404).send(`<html><body><h1>ID does not exist.</h1><h3>The ID you entered <i>\"${req.params.id}\" </i>does not exist.</h3></body></html>`);
     return;
   }
@@ -233,20 +264,29 @@ app.get('/u/:id', (req, res) => {
 DELETE A TINY URL
 */
 app.post('/urls/:id/delete', (req, res) => {
+  const userID = req.cookies["user_id"];
+  const urlObj = urlDatabase[req.params.id];
 
-  if (!urlDatabase[req.params.id]) {
-    return res.status(400).send(`The requested ID ${req.params.id} does not exist.`);
+  //No user is logged in
+  if (!userID) {
+    return res.status(400).send('You must be signed in to delete URL.');
   }
 
-  if ((req.cookies["user_id"] === undefined)) {
-    return res.status(400).send("Bad request. You must be signed in to be able to delete URL.");
+  //tinyURL ID doesn't exist in database
+  if (!urlObj) {
+    return res.status(400).send('The requested ID does not exist.');
   }
-  else {
-    delete urlDatabase[req.params.id];
-    res.redirect("/urls");
+
+  //User is trying to delete tinyURL that doesn't belong to them
+  if (urlObj.userID !== userID) {
+    return res.send('Invalid Request. You do not have access to this TinyURL.');
   }
+
+
+  delete urlDatabase[req.params.id];
+  return res.redirect('/urls');
+
 });
-
 
 
 /*
