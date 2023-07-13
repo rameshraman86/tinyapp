@@ -11,11 +11,28 @@ const PORT = 8080;
 
 
 //URL Database
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com",
+//   "4facas": "http://www.reddit.com"
+// };
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
-  "4facas": "http://www.reddit.com"
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "aJ48lW",
+  },
+  "4facas": {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
+  "9sm5xK": {
+    longURL: "https://www.reddit.com",
+    userID: "aJ48lW",
+  },
+  
 };
+
 //Users Database
 const users = {
   userRandomID: {
@@ -141,9 +158,12 @@ app.post("/urls", (req, res) => {
     return res.send('<html><body><h1>Lost your way?</h1><h3>You must be signed in to create tiny URL. Please register if you have not already and sign in to continue.</h3></body></html>');
   }
   else {
-    const URLCode = generateRandomString(6);
-    urlDatabase[URLCode] = req.body.longURL;
-    res.redirect(`/urls/${URLCode}`);
+    const tinyURLID = generateRandomString(6);
+    const incominglongURL = req.body.longURL;
+    const userID = req.cookies["user_id"];
+    urlDatabase[tinyURLID] = { longURL: incominglongURL, userID };
+
+    res.redirect(`/urls/${tinyURLID}`);
   }
 });
 
@@ -158,7 +178,7 @@ app.get('/urls/:id', (req, res) => {
     userID: req.cookies["user_id"],
     user: users,
     id: req.params.id,
-    longURL: urlDatabase[req.params.id],
+    longURL: urlDatabase[req.params.id].longURL,
     currentPage: 'URLDetails'
   };
   res.render("urls_show", templateVars);
@@ -166,7 +186,7 @@ app.get('/urls/:id', (req, res) => {
 
 
 app.post("/urls/:id/update", (req, res) => {
-  urlDatabase[req.params.id] = req.body.longURLUpdated;
+  urlDatabase[req.params.id].longURL = req.body.longURLUpdated;
   res.redirect("/urls");
 });
 
@@ -184,7 +204,7 @@ app.get("/u/:id", (req, res) => {
     res.status(404).send(`<html><body><h1>ID does not exist.</h1><h3>The ID you entered <i>\"${req.params.id}\" </i>does not exist.</h3></body></html>`);
     return;
   }
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
 

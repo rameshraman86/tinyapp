@@ -27,21 +27,21 @@
         </tr>
       </thead>
       <tbody>
-        <% for (let id in urls) { %>
+        <% for (let url in urls) { %>
           <tr>
             <td>
-              <%= id %>
+              <%= url %>
             </td>
             <td>
-              <%= urls[id] %>
+              <%= urls[url].longURL %>
             </td>
             <td>
-              <form method="GET" action="/urls/<%= id %>">
+              <form method="GET" action="/urls/<%= url %>">
                 <button type="submit" class="btn btn-primary">Edit</button>
               </form>
             </td>
             <td>
-              <form method="POST" action="/urls/<%= id %>/delete">
+              <form method="POST" action="/urls/<%= url %>/delete">
                 <button type="submit" class="btn btn-primary">Delete</button>
               </form>
             </td>
