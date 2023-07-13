@@ -1,6 +1,6 @@
 const cookieParser = require('cookie-parser');
 const express = require('express');
-const { findUserByEmail, generateRandomString } = require("./helperFunctions");
+const { findUserByEmail, generateRandomString, urlsForUser } = require("./helperFunctions");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 
@@ -10,27 +10,27 @@ app.set('view engine', 'ejs');
 const PORT = 8080;
 
 
-//URL Database
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com",
-//   "4facas": "http://www.reddit.com"
-// };
-
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
-    userID: "aJ48lW",
+    userID: "userRandomID",
   },
   "4facas": {
     longURL: "https://www.google.ca",
-    userID: "aJ48lW",
+    userID: "userRandomID",
   },
   "9sm5xK": {
     longURL: "https://www.reddit.com",
-    userID: "aJ48lW",
+    userID: "user2RandomID",
   },
-
+  "203raw": {
+    longURL: "https://www.mug.com",
+    userID: "user3RandomID",
+  },
+  "hgk5g": {
+    longURL: "https://www.sweet.com",
+    userID: "user3RandomID",
+  },
 };
 
 //Users Database
@@ -38,25 +38,26 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+    password: "user@example.com"
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: "user2@example.com",
   },
   user3RandomID: {
     id: "user3RandomID",
     email: "r@r.com",
-    password: "test",
+    password: "r@r.com",
   },
 };
+
 
 
 /*
 REGISTRATION
 */
-app.get("/register", (req, res) => {
+app.get('/register', (req, res) => {
   if (req.cookies["user_id"]) {
     return res.redirect('/urls');
   }
@@ -64,7 +65,7 @@ app.get("/register", (req, res) => {
   res.render("register", { currentPage: 'register' });
 });
 
-app.post("/register", (req, res) => {
+app.post('/register', (req, res) => {
   if (req.body.email === '' || req.body.password === '') {
     return res.status(400).send('Email or Password cannot be empty');
   }
@@ -83,18 +84,19 @@ app.post("/register", (req, res) => {
   }
 });
 
+
+
 /*
 USER LOGIN
 */
-app.get("/login", (req, res) => {
+app.get('/login', (req, res) => {
   if (req.cookies["user_id"]) {
     return res.redirect("/urls");
   }
-
   return res.render("login", { currentPage: 'login' });
 });
 
-app.post("/login", (req, res) => {
+app.post('/login', (req, res) => {
   if (req.body.email === '' || req.body.password === '') {
     return res.status(400).send('Email or Password cannot be empty');
   }
@@ -113,9 +115,9 @@ app.post("/login", (req, res) => {
   if (user === null) {
     return res.status(403).send('You have not registered yet. Please register before logging in');
   }
-
-
 });
+
+
 
 /*
 HOMEPAGE - SEE ALL URLS
@@ -126,17 +128,19 @@ app.get('/', (req, res) => {
 
 app.get('/urls', (req, res) => {
   if (req.cookies["user_id"] === undefined) {
-    // return res.redirect("/login");
     return res.send('<html><h1>Lost your way?</h1><h3>You must be signed in to view your URLs. Please register if you have not already and sign in to continue.</h3><a href ="/login">Back to login page</a></body></html>');
   }
+
   const templateVars = {
     userID: req.cookies["user_id"],
     user: users,
-    urls: urlDatabase,
+    urls: urlsForUser(req.cookies["user_id"], urlDatabase),
     currentPage: 'URLIndex'
   };
   res.render("urls_index", templateVars);
 });
+
+
 
 /*
 ADD NEW URL
@@ -154,7 +158,7 @@ app.get('/urls/new', (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-app.post("/urls", (req, res) => {
+app.post('/urls', (req, res) => {
   if (req.cookies["user_id"] === undefined) {
     return res.send('<html><body><h1>Lost your way?</h1><h3>You must be signed in to create tiny URL. Please register if you have not already and sign in to continue.</h3></body></html>');
   }
@@ -175,6 +179,15 @@ VIEW DETAILS AND EDIT URL
 */
 //page that opens the details page of a tinyURL.
 app.get('/urls/:id', (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.send('<html><h1>Lost your way?</h1><h3>You must be signed in to view URL details. <a href ="/login">Back to login page</a></body></html>');
+  }
+
+  //input : tinyurlID //must check if urlDatabase[tinuURLID].userID === loggedin user.
+  if (urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
+    return res.send('<html><h1>Invalid Request</h1><h3>You do not have access to the TinyURL details.</h3></body></html>');
+  }
+
   const templateVars = {
     userID: req.cookies["user_id"],
     user: users,
@@ -185,8 +198,13 @@ app.get('/urls/:id', (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.post('/urls/:id', (req, res) => {
+  if(!urlDatabase[req.params.id]) {
+    return req.status(400).send(`${req.params.id} does not exist.`);
+  }
+});
 
-app.post("/urls/:id/update", (req, res) => {
+app.post('/urls/:id/update', (req, res) => {
   urlDatabase[req.params.id].longURL = req.body.longURLUpdated;
   res.redirect("/urls");
 });
@@ -196,7 +214,7 @@ app.post("/urls/:id/update", (req, res) => {
 /*
 OPEN THE URL
 */
-app.get("/u/:id", (req, res) => {
+app.get('/u/:id', (req, res) => {
   const templateVars = {
     currentPage: 'URLPage'
   };
@@ -214,9 +232,19 @@ app.get("/u/:id", (req, res) => {
 /*
 DELETE A TINY URL
 */
-app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id];
-  res.redirect("/urls");
+app.post('/urls/:id/delete', (req, res) => {
+
+  if (!urlDatabase[req.params.id]) {
+    return res.status(400).send(`The requested ID ${req.params.id} does not exist.`);
+  }
+
+  if ((req.cookies["user_id"] === undefined)) {
+    return res.status(400).send("Bad request. You must be signed in to be able to delete URL.");
+  }
+  else {
+    delete urlDatabase[req.params.id];
+    res.redirect("/urls");
+  }
 });
 
 
@@ -224,7 +252,7 @@ app.post("/urls/:id/delete", (req, res) => {
 /*
 LOGOUT AND CLEAR COOKIES
 */
-app.post("/logout", (req, res) => {
+app.post('/logout', (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/login");
 });
