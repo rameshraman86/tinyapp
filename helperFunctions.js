@@ -1,5 +1,5 @@
-//User Lookup by email Helper 
-const findUserByEmail = (emailtoFind, obj) => {
+//User Lookup by email 
+const getUserByEmail = (emailtoFind, obj) => {
   for (let key in obj) {
     const user = obj[key];
     if (user.email === emailtoFind) {
@@ -22,16 +22,17 @@ function generateRandomString(length) {
   return randomString;
 }
 
-const urlsForUser = (id, database) => {
+//Filter and return urls owned by the user in an object
+const urlsOfUser = (id, database) => {
   const result = {};
 
-  for(const key in database) {
-    if(database[key].userID === id) {
+  for (const key in database) {
+    if (database[key].userID === id) {
       result[key] = database[key];
     }
   }
   return result;
-}
+};
 
 
-module.exports = { findUserByEmail, generateRandomString, urlsForUser};
+module.exports = { getUserByEmail, generateRandomString, urlsOfUser };

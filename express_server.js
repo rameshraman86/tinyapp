@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10);
 const cookieSession = require('cookie-session');
 
-const { findUserByEmail, generateRandomString, urlsForUser } = require('./helperFunctions');
+const { getUserByEmail, generateRandomString, urlsOfUser } = require('./helperFunctions');
 
 const app = express();
 
@@ -84,7 +84,7 @@ app.post('/register', (req, res) => {
     return res.status(400).send('Email or Password cannot be empty');
   }
 
-  if (findUserByEmail(email, users) === null) {
+  if (getUserByEmail(email, users) === null) {
     const generatedRandomUserID = generateRandomString(6);
     users[generatedRandomUserID] = {
       id: generatedRandomUserID,
@@ -118,7 +118,7 @@ app.post('/login', (req, res) => {
     return res.status(400).send('Email or Password cannot be empty');
   }
 
-  const userRecordInDatabase = findUserByEmail(email.toLowerCase(), users);
+  const userRecordInDatabase = getUserByEmail(email.toLowerCase(), users);
 
   if (
     userRecordInDatabase !== null &&
@@ -136,7 +136,7 @@ HOMEPAGE - SEE ALL URLS
 */
 app.get('/', (req, res) => {
   const userID = req.session.user_id;
-  if(userID){
+  if (userID) {
     res.redirect('/urls');
   }
   res.redirect('/login');
@@ -154,7 +154,7 @@ app.get('/urls', (req, res) => {
   const templateVars = {
     userID: userID,
     user: users,
-    urls: urlsForUser(userID, urlDatabase),
+    urls: urlsOfUser(userID, urlDatabase),
     currentPage: 'URLIndex',
   };
 
