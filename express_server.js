@@ -67,7 +67,6 @@ const users = {
 REGISTRATION
 */
 app.get('/register', (req, res) => {
-  console.log(users);
   const userID = req.session.user_id;
 
   if (userID) {
@@ -136,6 +135,7 @@ HOMEPAGE - SEE ALL URLS
 */
 app.get('/', (req, res) => {
   const userID = req.session.user_id;
+
   if (userID) {
     res.redirect('/urls');
   }
@@ -168,7 +168,9 @@ app.get('/urls/new', (req, res) => {
   const userID = req.session.user_id;
 
   if (userID === undefined) {
-    return res.redirect('/login');
+    return res.send(
+      '<html><body><h1>Lost your way?</h1><h3>You must be signed in to create tiny URL. Please register if you have not already and sign in to continue.</h3> <a href ="/login">Back to login page</a</body></html>'
+    );
   }
 
   const templateVars = {
@@ -254,9 +256,6 @@ app.post('/urls/:id', (req, res) => {
 OPEN THE full URL using tinyURL
 */
 app.get('/u/:id', (req, res) => {
-  const templateVars = {
-    currentPage: 'URLPage',
-  };
   if (!urlDatabase[req.params.id]) {
     res.status(404).send(
       `<html><body><h1>ID does not exist.</h1><h3>The ID you entered <i>"${req.params.id}" </i>does not exist.</h3></body></html>`
