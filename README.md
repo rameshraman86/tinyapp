@@ -15,6 +15,11 @@ The app will permit users to create, read, update, and delete (CRUD) a simple en
 - HTML
 - Bootstrap
 
+## Final Product
+!["Screenshot of create new URLs page"](https://github.com/rameshraman86/tinyapp/blob/main/docs/Create-new-url-page.png?raw=true)
+!["Screenshot of Login page"](https://github.com/rameshraman86/tinyapp/blob/main/docs/login-page.png?raw=true)
+!["Screenshot of my URLs page"](https://github.com/rameshraman86/tinyapp/blob/main/docs/my-urls-page.png?raw=true)
+
 ## Dependencies
 
 - Node.js
